@@ -35,24 +35,20 @@ const PDFViewer = ({ url }: PDFViewerProps) => {
   };
 
   const handleZoomIn = () => {
-    console.log('Zooming in');
     setScale(prev => Math.min(2, prev + 0.1));
   };
 
   const handleZoomOut = () => {
-    console.log('Zooming out');
     setScale(prev => Math.max(0.5, prev - 0.1));
   };
 
   const getPageText = async (pageNum: number): Promise<string | null> => {
     try {
-      console.log('Extracting text from page:', pageNum);
       const loadingTask = pdfjs.getDocument(url);
       const pdf = await loadingTask.promise;
       const page = await pdf.getPage(pageNum);
       const textContent = await page.getTextContent();
       const text = textContent.items.map((item: any) => item.str).join(' ');
-      console.log('Successfully extracted text, length:', text.length);
       return text;
     } catch (error) {
       console.error('Error extracting text:', error);
@@ -62,7 +58,6 @@ const PDFViewer = ({ url }: PDFViewerProps) => {
 
   const handleTranslate = async () => {
     try {
-      console.log('Starting translation for page:', currentPage);
       const pageText = await getPageText(currentPage);
       
       if (!pageText) {
@@ -74,11 +69,6 @@ const PDFViewer = ({ url }: PDFViewerProps) => {
         return;
       }
 
-      toast({
-        title: "Translating...",
-        description: "Please wait while we translate the text.",
-      });
-
       const { data, error } = await supabase.functions.invoke('google-ai', {
         body: { 
           text: pageText,
@@ -87,10 +77,16 @@ const PDFViewer = ({ url }: PDFViewerProps) => {
         }
       });
 
-      console.log('Translation response:', data);
+      if (error?.message?.includes('SERVICE_DISABLED')) {
+        toast({
+          variant: "destructive",
+          title: "Translation Error",
+          description: "The translation service is not enabled. Please contact support.",
+        });
+        return;
+      }
 
       if (error) {
-        console.error('Translation error:', error);
         throw error;
       }
 
@@ -115,7 +111,6 @@ const PDFViewer = ({ url }: PDFViewerProps) => {
 
   const handleExplain = async () => {
     try {
-      console.log('Starting analysis for page:', currentPage);
       const pageText = await getPageText(currentPage);
       
       if (!pageText) {
@@ -127,11 +122,6 @@ const PDFViewer = ({ url }: PDFViewerProps) => {
         return;
       }
 
-      toast({
-        title: "Analyzing...",
-        description: "Please wait while we analyze the text.",
-      });
-
       const { data, error } = await supabase.functions.invoke('google-ai', {
         body: { 
           text: pageText,
@@ -139,16 +129,22 @@ const PDFViewer = ({ url }: PDFViewerProps) => {
         }
       });
 
-      console.log('Analysis response:', data);
+      if (error?.message?.includes('SERVICE_DISABLED')) {
+        toast({
+          variant: "destructive",
+          title: "Analysis Error",
+          description: "The text analysis service is not enabled. Please contact support.",
+        });
+        return;
+      }
 
       if (error) {
-        console.error('Analysis error:', error);
         throw error;
       }
 
       if (data?.entities?.length) {
         const entities = data.entities
-          .slice(0, 5) // Show only top 5 entities
+          .slice(0, 5)
           .map((entity: any) => `${entity.name} (${entity.type})`)
           .join(', ');
 
@@ -158,7 +154,11 @@ const PDFViewer = ({ url }: PDFViewerProps) => {
           duration: 10000,
         });
       } else {
-        throw new Error('No entities found in the analysis');
+        toast({
+          variant: "destructive",
+          title: "Analysis Result",
+          description: "No key concepts were found in the text.",
+        });
       }
     } catch (error) {
       console.error('Analysis error:', error);
@@ -171,7 +171,6 @@ const PDFViewer = ({ url }: PDFViewerProps) => {
   };
 
   const handleGenerateQuiz = () => {
-    console.log('Quiz generation clicked');
     toast({
       title: "Quiz Generation",
       description: "This feature will be available soon!",
@@ -179,7 +178,6 @@ const PDFViewer = ({ url }: PDFViewerProps) => {
   };
 
   const handlePageChange = (newPage: number) => {
-    console.log('Changing to page:', newPage);
     setCurrentPage(newPage);
   };
 

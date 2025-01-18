@@ -17,7 +17,6 @@ interface RequestBody {
 }
 
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -29,10 +28,7 @@ serve(async (req) => {
       throw new Error('Text is required');
     }
 
-    console.log(`Processing ${action} request for text length: ${text.length}`);
-
     if (action === 'translate') {
-      console.log('Calling Google Translate API...');
       const response = await fetch(
         `https://translation.googleapis.com/language/translate/v2?key=${GOOGLE_API_KEY}`,
         {
@@ -48,7 +44,13 @@ serve(async (req) => {
       );
 
       const data = await response.json();
-      console.log('Translation API response:', data);
+      
+      if (data.error) {
+        return new Response(
+          JSON.stringify({ error: { message: data.error.message, code: 'SERVICE_DISABLED' } }), 
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 403 }
+        );
+      }
 
       return new Response(JSON.stringify(data), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -56,7 +58,6 @@ serve(async (req) => {
     }
 
     if (action === 'analyze') {
-      console.log('Calling Google Natural Language API...');
       const response = await fetch(
         `https://language.googleapis.com/v1/documents:analyzeEntities?key=${GOOGLE_API_KEY}`,
         {
@@ -75,7 +76,13 @@ serve(async (req) => {
       );
 
       const data = await response.json();
-      console.log('Analysis API response:', data);
+      
+      if (data.error) {
+        return new Response(
+          JSON.stringify({ error: { message: data.error.message, code: 'SERVICE_DISABLED' } }), 
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 403 }
+        );
+      }
 
       return new Response(JSON.stringify(data), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -87,8 +94,10 @@ serve(async (req) => {
     console.error('Error processing request:', error);
     return new Response(
       JSON.stringify({ 
-        error: error.message,
-        details: error.stack
+        error: { 
+          message: error.message,
+          details: error.stack
+        }
       }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }, 
