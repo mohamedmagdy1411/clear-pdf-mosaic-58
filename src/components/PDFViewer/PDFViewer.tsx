@@ -81,13 +81,20 @@ const PDFViewer = ({ url }: PDFViewerProps) => {
         toast({
           variant: "destructive",
           title: "Translation Error",
-          description: "The translation service is not enabled. Please contact support.",
+          description: "The Google Translation API is not enabled. Please visit the Google Cloud Console to enable it.",
+          duration: 10000,
         });
         return;
       }
 
       if (error) {
-        throw error;
+        console.error('Translation error:', error);
+        toast({
+          variant: "destructive",
+          title: "Translation Error",
+          description: "An error occurred while translating. Please try again later.",
+        });
+        return;
       }
 
       if (data?.data?.translations?.[0]?.translatedText) {
@@ -133,13 +140,20 @@ const PDFViewer = ({ url }: PDFViewerProps) => {
         toast({
           variant: "destructive",
           title: "Analysis Error",
-          description: "The text analysis service is not enabled. Please contact support.",
+          description: "The Google Natural Language API is not enabled. Please visit the Google Cloud Console to enable it.",
+          duration: 10000,
         });
         return;
       }
 
       if (error) {
-        throw error;
+        console.error('Analysis error:', error);
+        toast({
+          variant: "destructive",
+          title: "Analysis Error",
+          description: "An error occurred during analysis. Please try again later.",
+        });
+        return;
       }
 
       if (data?.entities?.length) {
@@ -155,7 +169,6 @@ const PDFViewer = ({ url }: PDFViewerProps) => {
         });
       } else {
         toast({
-          variant: "destructive",
           title: "Analysis Result",
           description: "No key concepts were found in the text.",
         });
