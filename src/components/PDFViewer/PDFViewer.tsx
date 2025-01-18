@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Document, Page, pdfjs } from 'react-pdf';
 import { useToast } from "@/components/ui/use-toast";
 import PDFControls from './PDFControls';
+import { supabase } from "@/integrations/supabase/client";
 import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/Page/TextLayer.css';
 
@@ -36,18 +37,87 @@ const PDFViewer = ({ url }: PDFViewerProps) => {
   const handleZoomIn = () => setScale(prev => Math.min(2, prev + 0.1));
   const handleZoomOut = () => setScale(prev => Math.max(0.5, prev - 0.1));
 
-  const handleTranslate = () => {
-    toast({
-      title: "Translation",
-      description: `Translating page ${currentPage}... This feature will be available soon!`,
-    });
+  const handleTranslate = async () => {
+    try {
+      const pageText = await getPageText(currentPage);
+      if (!pageText) {
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "Could not extract text from this page.",
+        });
+        return;
+      }
+
+      const { data, error } = await supabase.functions.invoke('google-ai', {
+        body: { text: pageText, action: 'translate', targetLanguage: 'en' }
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Translation",
+        description: data.data.translations[0].translatedText,
+        duration: 10000,
+      });
+    } catch (error) {
+      console.error('Translation error:', error);
+      toast({
+        variant: "destructive",
+        title: "Translation Error",
+        description: "Could not translate the text. Please try again later.",
+      });
+    }
   };
 
-  const handleExplain = () => {
-    toast({
-      title: "Explanation",
-      description: `Explaining page ${currentPage}... This feature will be available soon!`,
-    });
+  const handleExplain = async () => {
+    try {
+      const pageText = await getPageText(currentPage);
+      if (!pageText) {
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "Could not extract text from this page.",
+        });
+        return;
+      }
+
+      const { data, error } = await supabase.functions.invoke('google-ai', {
+        body: { text: pageText, action: 'analyze' }
+      });
+
+      if (error) throw error;
+
+      const entities = data.entities.map((entity: any) => 
+        `${entity.name} (${entity.type})`
+      ).join(', ');
+
+      toast({
+        title: "Key Concepts",
+        description: `Main entities found: ${entities}`,
+        duration: 10000,
+      });
+    } catch (error) {
+      console.error('Analysis error:', error);
+      toast({
+        variant: "destructive",
+        title: "Analysis Error",
+        description: "Could not analyze the text. Please try again later.",
+      });
+    }
+  };
+
+  const getPageText = async (pageNum: number): Promise<string | null> => {
+    try {
+      const page = document.querySelector('.react-pdf__Page');
+      if (!page) return null;
+      
+      const textContent = await (page as any)._page.getTextContent();
+      return textContent.items.map((item: any) => item.str).join(' ');
+    } catch (error) {
+      console.error('Error extracting text:', error);
+      return null;
+    }
   };
 
   const handleGenerateQuiz = () => {
