@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Document, Page, pdfjs } from 'react-pdf';
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import PDFControls from './PDFControls';
 import { supabase } from "@/integrations/supabase/client";
 import 'react-pdf/dist/Page/AnnotationLayer.css';
@@ -37,6 +37,21 @@ const PDFViewer = ({ url }: PDFViewerProps) => {
   const handleZoomIn = () => setScale(prev => Math.min(2, prev + 0.1));
   const handleZoomOut = () => setScale(prev => Math.max(0.5, prev - 0.1));
 
+  const getPageText = async (pageNum: number): Promise<string | null> => {
+    try {
+      const loadingTask = pdfjs.getDocument(url);
+      const pdf = await loadingTask.promise;
+      const page = await pdf.getPage(pageNum);
+      const textContent = await page.getTextContent();
+      const text = textContent.items.map((item: any) => item.str).join(' ');
+      console.log('Extracted text:', text.substring(0, 100) + '...'); // Log first 100 chars
+      return text;
+    } catch (error) {
+      console.error('Error extracting text:', error);
+      return null;
+    }
+  };
+
   const handleTranslate = async () => {
     try {
       const pageText = await getPageText(currentPage);
@@ -49,11 +64,21 @@ const PDFViewer = ({ url }: PDFViewerProps) => {
         return;
       }
 
+      console.log('Sending text for translation...');
       const { data, error } = await supabase.functions.invoke('google-ai', {
         body: { text: pageText, action: 'translate', targetLanguage: 'en' }
       });
 
-      if (error) throw error;
+      console.log('Translation response:', data);
+
+      if (error) {
+        console.error('Translation error:', error);
+        throw error;
+      }
+
+      if (!data?.data?.translations?.[0]?.translatedText) {
+        throw new Error('Invalid translation response');
+      }
 
       toast({
         title: "Translation",
@@ -82,11 +107,21 @@ const PDFViewer = ({ url }: PDFViewerProps) => {
         return;
       }
 
+      console.log('Sending text for analysis...');
       const { data, error } = await supabase.functions.invoke('google-ai', {
         body: { text: pageText, action: 'analyze' }
       });
 
-      if (error) throw error;
+      console.log('Analysis response:', data);
+
+      if (error) {
+        console.error('Analysis error:', error);
+        throw error;
+      }
+
+      if (!data?.entities?.length) {
+        throw new Error('No entities found in the analysis');
+      }
 
       const entities = data.entities.map((entity: any) => 
         `${entity.name} (${entity.type})`
@@ -104,19 +139,6 @@ const PDFViewer = ({ url }: PDFViewerProps) => {
         title: "Analysis Error",
         description: "Could not analyze the text. Please try again later.",
       });
-    }
-  };
-
-  const getPageText = async (pageNum: number): Promise<string | null> => {
-    try {
-      const page = document.querySelector('.react-pdf__Page');
-      if (!page) return null;
-      
-      const textContent = await (page as any)._page.getTextContent();
-      return textContent.items.map((item: any) => item.str).join(' ');
-    } catch (error) {
-      console.error('Error extracting text:', error);
-      return null;
     }
   };
 
