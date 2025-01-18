@@ -1,14 +1,19 @@
+import { useState } from "react";
 import PDFViewer from "@/components/PDFViewer/PDFViewer";
 import PDFUploader from "@/components/PDFUploader/PDFUploader";
 
 const Index = () => {
-  // For testing, we'll use a sample PDF from Mozilla
-  const samplePDFUrl = "https://raw.githubusercontent.com/mozilla/pdf.js/ba2edeae/web/compressed.tracemonkey-pldi-09.pdf";
+  const [pdfUrl, setPdfUrl] = useState<string>("https://raw.githubusercontent.com/mozilla/pdf.js/ba2edeae/web/compressed.tracemonkey-pldi-09.pdf");
+
+  const handleFileSelect = (file: File) => {
+    const fileUrl = URL.createObjectURL(file);
+    setPdfUrl(fileUrl);
+  };
 
   return (
     <div className="space-y-8">
-      <PDFUploader />
-      <PDFViewer url={samplePDFUrl} />
+      <PDFUploader onFileSelect={handleFileSelect} />
+      <PDFViewer url={pdfUrl} />
     </div>
   );
 };

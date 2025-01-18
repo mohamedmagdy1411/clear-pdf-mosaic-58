@@ -4,7 +4,11 @@ import { Upload, FileText } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
 
-const PDFUploader = () => {
+interface PDFUploaderProps {
+  onFileSelect: (file: File) => void;
+}
+
+const PDFUploader = ({ onFileSelect }: PDFUploaderProps) => {
   const [file, setFile] = useState<File | null>(null);
   const { toast } = useToast();
 
@@ -19,7 +23,8 @@ const PDFUploader = () => {
       return;
     }
     setFile(uploadedFile);
-  }, [toast]);
+    onFileSelect(uploadedFile);
+  }, [toast, onFileSelect]);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
