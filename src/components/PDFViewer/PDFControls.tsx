@@ -2,9 +2,7 @@ import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Minus, Plus, ChevronLeft, ChevronRight, Languages, BookOpen, BrainCircuit } from "lucide-react";
-import { Tooltip } from "@/components/ui/tooltip";
-import { TooltipContent } from "@/components/ui/tooltip";
-import { TooltipTrigger } from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface PDFControlsProps {
   numPages: number;

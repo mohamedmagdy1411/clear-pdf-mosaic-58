@@ -23,7 +23,7 @@ serve(async (req) => {
   }
 
   try {
-    const { text, targetLanguage = 'en', action } = await req.json() as RequestBody
+    const { text, targetLanguage = 'en', action } = await req.json() as RequestBody;
 
     if (!text) {
       throw new Error('Text is required');
@@ -49,10 +49,6 @@ serve(async (req) => {
 
       const data = await response.json();
       console.log('Translation API response:', data);
-
-      if (!response.ok) {
-        throw new Error(`Translation API error: ${JSON.stringify(data)}`);
-      }
 
       return new Response(JSON.stringify(data), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -80,10 +76,6 @@ serve(async (req) => {
 
       const data = await response.json();
       console.log('Analysis API response:', data);
-
-      if (!response.ok) {
-        throw new Error(`Analysis API error: ${JSON.stringify(data)}`);
-      }
 
       return new Response(JSON.stringify(data), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },

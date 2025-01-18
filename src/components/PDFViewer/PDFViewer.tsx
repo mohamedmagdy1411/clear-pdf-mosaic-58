@@ -34,17 +34,25 @@ const PDFViewer = ({ url }: PDFViewerProps) => {
     console.error('Error loading PDF:', error);
   };
 
-  const handleZoomIn = () => setScale(prev => Math.min(2, prev + 0.1));
-  const handleZoomOut = () => setScale(prev => Math.max(0.5, prev - 0.1));
+  const handleZoomIn = () => {
+    console.log('Zooming in');
+    setScale(prev => Math.min(2, prev + 0.1));
+  };
+
+  const handleZoomOut = () => {
+    console.log('Zooming out');
+    setScale(prev => Math.max(0.5, prev - 0.1));
+  };
 
   const getPageText = async (pageNum: number): Promise<string | null> => {
     try {
+      console.log('Extracting text from page:', pageNum);
       const loadingTask = pdfjs.getDocument(url);
       const pdf = await loadingTask.promise;
       const page = await pdf.getPage(pageNum);
       const textContent = await page.getTextContent();
       const text = textContent.items.map((item: any) => item.str).join(' ');
-      console.log('Extracted text:', text.substring(0, 100) + '...'); // Log first 100 chars
+      console.log('Successfully extracted text, length:', text.length);
       return text;
     } catch (error) {
       console.error('Error extracting text:', error);
@@ -54,7 +62,9 @@ const PDFViewer = ({ url }: PDFViewerProps) => {
 
   const handleTranslate = async () => {
     try {
+      console.log('Starting translation for page:', currentPage);
       const pageText = await getPageText(currentPage);
+      
       if (!pageText) {
         toast({
           variant: "destructive",
@@ -64,9 +74,17 @@ const PDFViewer = ({ url }: PDFViewerProps) => {
         return;
       }
 
-      console.log('Sending text for translation...');
+      toast({
+        title: "Translating...",
+        description: "Please wait while we translate the text.",
+      });
+
       const { data, error } = await supabase.functions.invoke('google-ai', {
-        body: { text: pageText, action: 'translate', targetLanguage: 'en' }
+        body: { 
+          text: pageText,
+          action: 'translate',
+          targetLanguage: 'en'
+        }
       });
 
       console.log('Translation response:', data);
@@ -76,15 +94,15 @@ const PDFViewer = ({ url }: PDFViewerProps) => {
         throw error;
       }
 
-      if (!data?.data?.translations?.[0]?.translatedText) {
+      if (data?.data?.translations?.[0]?.translatedText) {
+        toast({
+          title: "Translation",
+          description: data.data.translations[0].translatedText,
+          duration: 10000,
+        });
+      } else {
         throw new Error('Invalid translation response');
       }
-
-      toast({
-        title: "Translation",
-        description: data.data.translations[0].translatedText,
-        duration: 10000,
-      });
     } catch (error) {
       console.error('Translation error:', error);
       toast({
@@ -97,7 +115,9 @@ const PDFViewer = ({ url }: PDFViewerProps) => {
 
   const handleExplain = async () => {
     try {
+      console.log('Starting analysis for page:', currentPage);
       const pageText = await getPageText(currentPage);
+      
       if (!pageText) {
         toast({
           variant: "destructive",
@@ -107,9 +127,16 @@ const PDFViewer = ({ url }: PDFViewerProps) => {
         return;
       }
 
-      console.log('Sending text for analysis...');
+      toast({
+        title: "Analyzing...",
+        description: "Please wait while we analyze the text.",
+      });
+
       const { data, error } = await supabase.functions.invoke('google-ai', {
-        body: { text: pageText, action: 'analyze' }
+        body: { 
+          text: pageText,
+          action: 'analyze'
+        }
       });
 
       console.log('Analysis response:', data);
@@ -119,19 +146,20 @@ const PDFViewer = ({ url }: PDFViewerProps) => {
         throw error;
       }
 
-      if (!data?.entities?.length) {
+      if (data?.entities?.length) {
+        const entities = data.entities
+          .slice(0, 5) // Show only top 5 entities
+          .map((entity: any) => `${entity.name} (${entity.type})`)
+          .join(', ');
+
+        toast({
+          title: "Key Concepts",
+          description: `Main entities found: ${entities}`,
+          duration: 10000,
+        });
+      } else {
         throw new Error('No entities found in the analysis');
       }
-
-      const entities = data.entities.map((entity: any) => 
-        `${entity.name} (${entity.type})`
-      ).join(', ');
-
-      toast({
-        title: "Key Concepts",
-        description: `Main entities found: ${entities}`,
-        duration: 10000,
-      });
     } catch (error) {
       console.error('Analysis error:', error);
       toast({
@@ -143,10 +171,16 @@ const PDFViewer = ({ url }: PDFViewerProps) => {
   };
 
   const handleGenerateQuiz = () => {
+    console.log('Quiz generation clicked');
     toast({
       title: "Quiz Generation",
-      description: `Generating quiz for page ${currentPage}... This feature will be available soon!`,
+      description: "This feature will be available soon!",
     });
+  };
+
+  const handlePageChange = (newPage: number) => {
+    console.log('Changing to page:', newPage);
+    setCurrentPage(newPage);
   };
 
   return (
@@ -180,7 +214,7 @@ const PDFViewer = ({ url }: PDFViewerProps) => {
           numPages={numPages}
           currentPage={currentPage}
           scale={scale}
-          onPageChange={setCurrentPage}
+          onPageChange={handlePageChange}
           onZoomIn={handleZoomIn}
           onZoomOut={handleZoomOut}
           onTranslate={handleTranslate}
