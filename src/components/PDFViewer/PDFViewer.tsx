@@ -5,7 +5,6 @@ import PDFControls from './PDFControls';
 import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/Page/TextLayer.css';
 
-// Set up PDF.js worker
 pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.js`;
 
 interface PDFViewerProps {
@@ -36,6 +35,27 @@ const PDFViewer = ({ url }: PDFViewerProps) => {
 
   const handleZoomIn = () => setScale(prev => Math.min(2, prev + 0.1));
   const handleZoomOut = () => setScale(prev => Math.max(0.5, prev - 0.1));
+
+  const handleTranslate = () => {
+    toast({
+      title: "Translation",
+      description: `Translating page ${currentPage}... This feature will be available soon!`,
+    });
+  };
+
+  const handleExplain = () => {
+    toast({
+      title: "Explanation",
+      description: `Explaining page ${currentPage}... This feature will be available soon!`,
+    });
+  };
+
+  const handleGenerateQuiz = () => {
+    toast({
+      title: "Quiz Generation",
+      description: `Generating quiz for page ${currentPage}... This feature will be available soon!`,
+    });
+  };
 
   return (
     <div className="min-h-screen bg-gray-100 pt-8 pb-24">
@@ -71,6 +91,9 @@ const PDFViewer = ({ url }: PDFViewerProps) => {
           onPageChange={setCurrentPage}
           onZoomIn={handleZoomIn}
           onZoomOut={handleZoomOut}
+          onTranslate={handleTranslate}
+          onExplain={handleExplain}
+          onGenerateQuiz={handleGenerateQuiz}
         />
       )}
     </div>

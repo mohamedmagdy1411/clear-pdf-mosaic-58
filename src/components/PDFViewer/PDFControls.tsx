@@ -1,7 +1,10 @@
 import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Minus, Plus, ChevronLeft, ChevronRight } from "lucide-react";
+import { Minus, Plus, ChevronLeft, ChevronRight, Languages, BookOpen, BrainCircuit } from "lucide-react";
+import { Tooltip } from "@/components/ui/tooltip";
+import { TooltipContent } from "@/components/ui/tooltip";
+import { TooltipTrigger } from "@/components/ui/tooltip";
 
 interface PDFControlsProps {
   numPages: number;
@@ -10,6 +13,9 @@ interface PDFControlsProps {
   onPageChange: (page: number) => void;
   onZoomIn: () => void;
   onZoomOut: () => void;
+  onTranslate: () => void;
+  onExplain: () => void;
+  onGenerateQuiz: () => void;
 }
 
 const PDFControls = ({
@@ -18,7 +24,10 @@ const PDFControls = ({
   scale,
   onPageChange,
   onZoomIn,
-  onZoomOut
+  onZoomOut,
+  onTranslate,
+  onExplain,
+  onGenerateQuiz
 }: PDFControlsProps) => {
   const handlePageInput = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = parseInt(e.target.value);
@@ -29,7 +38,7 @@ const PDFControls = ({
 
   return (
     <div className="fixed bottom-0 left-0 right-0 bg-white/80 backdrop-blur-sm border-t border-gray-200 p-4">
-      <div className="max-w-3xl mx-auto flex items-center justify-center gap-4">
+      <div className="max-w-3xl mx-auto flex items-center justify-between gap-4">
         <div className="flex items-center gap-2">
           <Button
             variant="outline"
@@ -63,6 +72,41 @@ const PDFControls = ({
         </div>
 
         <div className="flex items-center gap-2">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button variant="outline" size="icon" onClick={onTranslate}>
+                <Languages className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Translate this page</p>
+            </TooltipContent>
+          </Tooltip>
+
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button variant="outline" size="icon" onClick={onExplain}>
+                <BookOpen className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Explain this page</p>
+            </TooltipContent>
+          </Tooltip>
+
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button variant="outline" size="icon" onClick={onGenerateQuiz}>
+                <BrainCircuit className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Generate quiz from this page</p>
+            </TooltipContent>
+          </Tooltip>
+
+          <div className="border-l border-gray-200 mx-2 h-6" />
+
           <Button
             variant="outline"
             size="icon"
