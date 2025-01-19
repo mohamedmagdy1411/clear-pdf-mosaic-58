@@ -56,7 +56,7 @@ const PDFViewer = ({ url }: PDFViewerProps) => {
     }
   };
 
-  const handleTranslate = async () => {
+  const handleGeminiAction = async (action: 'translate' | 'explain' | 'quiz') => {
     try {
       const pageText = await getPageText(currentPage);
       
@@ -69,112 +69,54 @@ const PDFViewer = ({ url }: PDFViewerProps) => {
         return;
       }
 
-      const { data, error } = await supabase.functions.invoke('google-ai', {
+      const { data, error } = await supabase.functions.invoke('gemini-ai', {
         body: { 
           text: pageText,
-          action: 'translate',
-          targetLanguage: 'en'
+          action: action
         }
       });
 
       if (error) {
-        if (error.message?.includes('SERVICE_DISABLED')) {
-          toast({
-            variant: "destructive",
-            title: "Translation Error",
-            description: "The Google Translation API is not enabled. Please contact the administrator.",
-            duration: 10000,
-          });
-          return;
-        }
         throw error;
       }
 
-      if (data?.data?.translations?.[0]?.translatedText) {
+      if (action === 'quiz' && data?.result) {
+        try {
+          const questions = JSON.parse(data.result);
+          questions.forEach((q: any, index: number) => {
+            toast({
+              title: `Question ${index + 1}`,
+              description: `${q.question}\n\nOptions:\n${q.options.join('\n')}\n\nCorrect Answer: ${q.options[q.correctIndex]}`,
+              duration: 10000,
+            });
+          });
+        } catch (e) {
+          toast({
+            title: "Quiz Generated",
+            description: data.result,
+            duration: 10000,
+          });
+        }
+      } else {
         toast({
-          title: "Translation",
-          description: data.data.translations[0].translatedText,
+          title: action === 'translate' ? "Translation" : "Explanation",
+          description: data.result,
           duration: 10000,
         });
-      } else {
-        throw new Error('Invalid translation response');
       }
     } catch (error) {
-      console.error('Translation error:', error);
+      console.error(`${action} error:`, error);
       toast({
         variant: "destructive",
-        title: "Translation Error",
-        description: "Could not translate the text. Please try again later.",
+        title: `${action.charAt(0).toUpperCase() + action.slice(1)} Error`,
+        description: `Could not ${action} the text. Please try again later.`,
       });
     }
   };
 
-  const handleExplain = async () => {
-    try {
-      const pageText = await getPageText(currentPage);
-      
-      if (!pageText) {
-        toast({
-          variant: "destructive",
-          title: "Error",
-          description: "Could not extract text from this page.",
-        });
-        return;
-      }
-
-      const { data, error } = await supabase.functions.invoke('google-ai', {
-        body: { 
-          text: pageText,
-          action: 'analyze'
-        }
-      });
-
-      if (error) {
-        if (error.message?.includes('SERVICE_DISABLED')) {
-          toast({
-            variant: "destructive",
-            title: "Analysis Error",
-            description: "The Google Natural Language API is not enabled. Please contact the administrator.",
-            duration: 10000,
-          });
-          return;
-        }
-        throw error;
-      }
-
-      if (data?.entities?.length) {
-        const entities = data.entities
-          .slice(0, 5)
-          .map((entity: any) => `${entity.name} (${entity.type})`)
-          .join(', ');
-
-        toast({
-          title: "Key Concepts",
-          description: `Main entities found: ${entities}`,
-          duration: 10000,
-        });
-      } else {
-        toast({
-          title: "Analysis Result",
-          description: "No key concepts were found in the text.",
-        });
-      }
-    } catch (error) {
-      console.error('Analysis error:', error);
-      toast({
-        variant: "destructive",
-        title: "Analysis Error",
-        description: "Could not analyze the text. Please try again later.",
-      });
-    }
-  };
-
-  const handleGenerateQuiz = () => {
-    toast({
-      title: "Quiz Generation",
-      description: "This feature will be available soon!",
-    });
-  };
+  const handleTranslate = () => handleGeminiAction('translate');
+  const handleExplain = () => handleGeminiAction('explain');
+  const handleGenerateQuiz = () => handleGeminiAction('quiz');
 
   const handlePageChange = (newPage: number) => {
     setCurrentPage(newPage);
