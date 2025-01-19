@@ -6,10 +6,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Label } from "@/components/ui/label";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { CheckCircle2, XCircle } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface Question {
   question: string;
@@ -24,143 +21,94 @@ interface QuizModalProps {
   questions: Question[];
 }
 
-const QuizModal = ({ isOpen, onClose, questions = [] }: QuizModalProps) => {
+const QuizModal = ({ isOpen, onClose, questions }: QuizModalProps) => {
   const [currentQuestion, setCurrentQuestion] = useState(0);
-  const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
-  const [showResult, setShowResult] = useState(false);
-  const [score, setScore] = useState(0);
-  const [showFeedback, setShowFeedback] = useState(false);
-  const [answers, setAnswers] = useState<boolean[]>([]);
+  const [selectedAnswers, setSelectedAnswers] = useState<number[]>([]);
+  const [showExplanation, setShowExplanation] = useState(false);
 
-  if (!questions.length) {
-    return (
-      <Dialog open={isOpen} onOpenChange={onClose}>
-        <DialogContent className="sm:max-w-[500px]">
-          <DialogHeader>
-            <DialogTitle>Quiz</DialogTitle>
-          </DialogHeader>
-          <div className="p-4 text-center">
-            <p>No questions available. Please try generating the quiz again.</p>
-            <Button onClick={onClose} className="mt-4">Close</Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-    );
-  }
-
-  const handleAnswerSelect = (index: number) => {
-    setSelectedAnswer(index);
-    setShowFeedback(true);
-    
-    const isCorrect = index === questions[currentQuestion]?.correctIndex;
-    const newAnswers = [...answers];
-    newAnswers[currentQuestion] = isCorrect;
-    setAnswers(newAnswers);
+  const handleAnswerSelect = (optionIndex: number) => {
+    const newAnswers = [...selectedAnswers];
+    newAnswers[currentQuestion] = optionIndex;
+    setSelectedAnswers(newAnswers);
+    setShowExplanation(true);
   };
 
-  const handleNext = () => {
-    if (selectedAnswer === questions[currentQuestion]?.correctIndex) {
-      setScore(score + 1);
-    }
-    
+  const handleNextQuestion = () => {
     if (currentQuestion < questions.length - 1) {
       setCurrentQuestion(currentQuestion + 1);
-      setSelectedAnswer(null);
-      setShowFeedback(false);
-    } else {
-      setShowResult(true);
+      setShowExplanation(false);
     }
   };
 
-  const handleReset = () => {
-    setCurrentQuestion(0);
-    setSelectedAnswer(null);
-    setShowResult(false);
-    setScore(0);
-    setShowFeedback(false);
-    setAnswers([]);
+  const handlePreviousQuestion = () => {
+    if (currentQuestion > 0) {
+      setCurrentQuestion(currentQuestion - 1);
+      setShowExplanation(true);
+    }
   };
+
+  const currentQuestionData = questions[currentQuestion];
+  const selectedAnswer = selectedAnswers[currentQuestion];
+  const isCorrect = selectedAnswer === currentQuestionData?.correctIndex;
+
+  if (!currentQuestionData) return null;
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>
-            {showResult ? "Quiz Results" : `Question ${currentQuestion + 1} of ${questions.length}`}
-          </DialogTitle>
+          <DialogTitle>Question {currentQuestion + 1} of {questions.length}</DialogTitle>
         </DialogHeader>
+        <div className="space-y-4">
+          <p className="text-lg font-medium">{currentQuestionData.question}</p>
+          <div className="space-y-2">
+            {currentQuestionData.options.map((option, index) => (
+              <Button
+                key={index}
+                variant="outline"
+                className={cn(
+                  "w-full justify-start text-left",
+                  selectedAnswer === index && (
+                    isCorrect ? "bg-green-100 border-green-500" : "bg-red-100 border-red-500"
+                  )
+                )}
+                onClick={() => handleAnswerSelect(index)}
+              >
+                {option}
+              </Button>
+            ))}
+          </div>
 
-        {!showResult ? (
-          <div className="space-y-6">
-            <p className="text-lg font-medium">{questions[currentQuestion]?.question}</p>
-            
-            <RadioGroup
-              value={selectedAnswer?.toString()}
-              onValueChange={(value) => handleAnswerSelect(parseInt(value))}
-              className="space-y-3"
-            >
-              {questions[currentQuestion]?.options.map((option, index) => (
-                <div key={index} className="flex items-center space-x-2">
-                  <RadioGroupItem value={index.toString()} id={`option-${index}`} />
-                  <Label htmlFor={`option-${index}`} className="text-base">
-                    {option}
-                  </Label>
-                </div>
-              ))}
-            </RadioGroup>
+          {showExplanation && selectedAnswer !== undefined && (
+            <div className={cn(
+              "p-4 rounded-md mt-4",
+              isCorrect ? "bg-green-50 text-green-800" : "bg-red-50 text-red-800"
+            )}>
+              <p className="font-medium mb-2">
+                {isCorrect ? "Correct!" : "Incorrect"}
+              </p>
+              {currentQuestionData.explanation && (
+                <p>{currentQuestionData.explanation}</p>
+              )}
+            </div>
+          )}
 
-            {showFeedback && selectedAnswer !== null && (
-              <Alert variant={answers[currentQuestion] ? "default" : "destructive"}>
-                <div className="flex items-center gap-2">
-                  {answers[currentQuestion] ? (
-                    <CheckCircle2 className="h-4 w-4 text-green-500" />
-                  ) : (
-                    <XCircle className="h-4 w-4 text-red-500" />
-                  )}
-                  <AlertDescription>
-                    {answers[currentQuestion] 
-                      ? "Correct!" 
-                      : `Incorrect. The correct answer is: ${questions[currentQuestion]?.options[questions[currentQuestion]?.correctIndex]}`
-                    }
-                    {questions[currentQuestion]?.explanation && (
-                      <p className="mt-2 text-sm text-muted-foreground">
-                        {questions[currentQuestion].explanation}
-                      </p>
-                    )}
-                  </AlertDescription>
-                </div>
-              </Alert>
-            )}
-
+          <div className="flex justify-between mt-6">
             <Button
-              onClick={handleNext}
-              disabled={selectedAnswer === null}
-              className="w-full"
+              variant="outline"
+              onClick={handlePreviousQuestion}
+              disabled={currentQuestion === 0}
             >
-              {currentQuestion === questions.length - 1 ? "Finish" : "Next"}
+              Previous
+            </Button>
+            <Button
+              onClick={handleNextQuestion}
+              disabled={currentQuestion === questions.length - 1}
+            >
+              Next
             </Button>
           </div>
-        ) : (
-          <div className="space-y-6">
-            <div className="text-center">
-              <p className="text-2xl font-bold mb-2">Your Score</p>
-              <p className="text-4xl font-bold text-primary">
-                {score} / {questions.length}
-              </p>
-              <p className="text-muted-foreground mt-2">
-                ({Math.round((score / questions.length) * 100)}%)
-              </p>
-            </div>
-            <div className="space-y-4">
-              <Button onClick={handleReset} className="w-full">
-                Try Again
-              </Button>
-              <Button onClick={onClose} variant="outline" className="w-full">
-                Close
-              </Button>
-            </div>
-          </div>
-        )}
+        </div>
       </DialogContent>
     </Dialog>
   );
