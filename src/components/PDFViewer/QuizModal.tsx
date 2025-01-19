@@ -8,7 +8,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
-import { Check, X } from "lucide-react";
 
 interface Question {
   question: string;
@@ -22,11 +21,28 @@ interface QuizModalProps {
   questions: Question[];
 }
 
-const QuizModal = ({ isOpen, onClose, questions }: QuizModalProps) => {
+const QuizModal = ({ isOpen, onClose, questions = [] }: QuizModalProps) => {
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
   const [showResult, setShowResult] = useState(false);
   const [score, setScore] = useState(0);
+
+  // If there are no questions, show a message
+  if (!questions.length) {
+    return (
+      <Dialog open={isOpen} onOpenChange={onClose}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Quiz</DialogTitle>
+          </DialogHeader>
+          <div className="p-4 text-center">
+            <p>No questions available. Please try generating the quiz again.</p>
+            <Button onClick={onClose} className="mt-4">Close</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
 
   const handleAnswerSelect = (index: number) => {
     setSelectedAnswer(index);
@@ -64,14 +80,14 @@ const QuizModal = ({ isOpen, onClose, questions }: QuizModalProps) => {
 
         {!showResult ? (
           <div className="space-y-6">
-            <p className="text-lg font-medium">{questions[currentQuestion].question}</p>
+            <p className="text-lg font-medium">{questions[currentQuestion]?.question}</p>
             
             <RadioGroup
               value={selectedAnswer?.toString()}
               onValueChange={(value) => handleAnswerSelect(parseInt(value))}
               className="space-y-3"
             >
-              {questions[currentQuestion].options.map((option, index) => (
+              {questions[currentQuestion]?.options.map((option, index) => (
                 <div key={index} className="flex items-center space-x-2">
                   <RadioGroupItem value={index.toString()} id={`option-${index}`} />
                   <Label htmlFor={`option-${index}`} className="text-base">
@@ -100,9 +116,14 @@ const QuizModal = ({ isOpen, onClose, questions }: QuizModalProps) => {
                 ({Math.round((score / questions.length) * 100)}%)
               </p>
             </div>
-            <Button onClick={handleReset} className="w-full">
-              Try Again
-            </Button>
+            <div className="space-y-4">
+              <Button onClick={handleReset} className="w-full">
+                Try Again
+              </Button>
+              <Button onClick={onClose} variant="outline" className="w-full">
+                Close
+              </Button>
+            </div>
           </div>
         )}
       </DialogContent>
