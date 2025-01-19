@@ -83,13 +83,14 @@ const PDFViewer = ({ url }: PDFViewerProps) => {
         return;
       }
 
-      // Make sure we're using the correct Supabase function URL
+      console.log('Calling Supabase function with:', { action, options, textLength: pageText.length });
+      
       const { data, error } = await supabase.functions.invoke('gemini-ai', {
-        body: { 
+        body: JSON.stringify({ 
           text: pageText,
           action,
           options
-        }
+        })
       });
 
       if (error) {
