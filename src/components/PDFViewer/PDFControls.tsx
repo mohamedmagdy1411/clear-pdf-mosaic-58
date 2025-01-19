@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -6,13 +6,21 @@ import {
   Plus,
   ChevronLeft,
   ChevronRight,
-  Globe2,
-  BookOpen,
-  BrainCircuit,
   Languages,
-  MessageSquareText
+  MessageSquareText,
+  BrainCircuit,
 } from "lucide-react";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger
+} from "@/components/ui/tooltip";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface PDFControlsProps {
   numPages: number;
@@ -21,10 +29,31 @@ interface PDFControlsProps {
   onPageChange: (page: number) => void;
   onZoomIn: () => void;
   onZoomOut: () => void;
-  onTranslate: () => void;
-  onExplain: () => void;
+  onTranslate: (language: string) => void;
+  onExplain: (style: string) => void;
   onGenerateQuiz: () => void;
 }
+
+const LANGUAGES = [
+  'English',
+  'Spanish',
+  'French',
+  'German',
+  'Italian',
+  'Portuguese',
+  'Chinese',
+  'Japanese',
+  'Korean',
+  'Russian',
+  'Arabic',
+  'Hindi'
+];
+
+const EXPLANATION_STYLES = [
+  { label: 'Simple', value: 'simple' },
+  { label: 'Technical', value: 'technical' },
+  { label: 'Academic', value: 'academic' },
+];
 
 const PDFControls = ({
   numPages,
@@ -80,27 +109,49 @@ const PDFControls = ({
         </div>
 
         <div className="flex items-center gap-2">
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button variant="outline" size="icon" onClick={onTranslate}>
-                <Languages className="h-4 w-4" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>Translate this page</p>
-            </TooltipContent>
-          </Tooltip>
+          <DropdownMenu>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="icon">
+                    <Languages className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Translate this page</p>
+              </TooltipContent>
+            </Tooltip>
+            <DropdownMenuContent align="end">
+              {LANGUAGES.map((lang) => (
+                <DropdownMenuItem key={lang} onClick={() => onTranslate(lang)}>
+                  {lang}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
 
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button variant="outline" size="icon" onClick={onExplain}>
-                <MessageSquareText className="h-4 w-4" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>Get a simple explanation</p>
-            </TooltipContent>
-          </Tooltip>
+          <DropdownMenu>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="icon">
+                    <MessageSquareText className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Get an explanation</p>
+              </TooltipContent>
+            </Tooltip>
+            <DropdownMenuContent align="end">
+              {EXPLANATION_STYLES.map((style) => (
+                <DropdownMenuItem key={style.value} onClick={() => onExplain(style.value)}>
+                  {style.label}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
 
           <Tooltip>
             <TooltipTrigger asChild>
