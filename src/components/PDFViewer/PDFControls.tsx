@@ -1,7 +1,17 @@
 import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Minus, Plus, ChevronLeft, ChevronRight, Languages, BookOpen, BrainCircuit } from "lucide-react";
+import {
+  Minus,
+  Plus,
+  ChevronLeft,
+  ChevronRight,
+  Globe2,
+  BookOpen,
+  BrainCircuit,
+  Languages,
+  MessageSquareText
+} from "lucide-react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface PDFControlsProps {
@@ -84,11 +94,11 @@ const PDFControls = ({
           <Tooltip>
             <TooltipTrigger asChild>
               <Button variant="outline" size="icon" onClick={onExplain}>
-                <BookOpen className="h-4 w-4" />
+                <MessageSquareText className="h-4 w-4" />
               </Button>
             </TooltipTrigger>
             <TooltipContent>
-              <p>Explain this page</p>
+              <p>Get a simple explanation</p>
             </TooltipContent>
           </Tooltip>
 
@@ -99,7 +109,7 @@ const PDFControls = ({
               </Button>
             </TooltipTrigger>
             <TooltipContent>
-              <p>Generate quiz from this page</p>
+              <p>Generate interactive quiz</p>
             </TooltipContent>
           </Tooltip>
 

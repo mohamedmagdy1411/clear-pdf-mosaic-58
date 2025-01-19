@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Document, Page, pdfjs } from 'react-pdf';
 import { useToast } from "@/hooks/use-toast";
 import PDFControls from './PDFControls';
+import QuizModal from './QuizModal';
 import { supabase } from "@/integrations/supabase/client";
 import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/Page/TextLayer.css';
@@ -12,11 +13,19 @@ interface PDFViewerProps {
   url: string;
 }
 
+interface Question {
+  question: string;
+  options: string[];
+  correctIndex: number;
+}
+
 const PDFViewer = ({ url }: PDFViewerProps) => {
   const [numPages, setNumPages] = useState<number>(0);
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [scale, setScale] = useState<number>(1);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [quizQuestions, setQuizQuestions] = useState<Question[]>([]);
+  const [isQuizModalOpen, setIsQuizModalOpen] = useState<boolean>(false);
   const { toast } = useToast();
 
   const onDocumentLoadSuccess = ({ numPages }: { numPages: number }) => {
@@ -80,21 +89,16 @@ const PDFViewer = ({ url }: PDFViewerProps) => {
         throw error;
       }
 
-      if (action === 'quiz' && data?.result) {
+      if (action === 'quiz') {
         try {
           const questions = JSON.parse(data.result);
-          questions.forEach((q: any, index: number) => {
-            toast({
-              title: `Question ${index + 1}`,
-              description: `${q.question}\n\nOptions:\n${q.options.join('\n')}\n\nCorrect Answer: ${q.options[q.correctIndex]}`,
-              duration: 10000,
-            });
-          });
+          setQuizQuestions(questions);
+          setIsQuizModalOpen(true);
         } catch (e) {
           toast({
-            title: "Quiz Generated",
-            description: data.result,
-            duration: 10000,
+            variant: "destructive",
+            title: "Error parsing quiz",
+            description: "Could not generate quiz questions. Please try again.",
           });
         }
       } else {
@@ -161,6 +165,12 @@ const PDFViewer = ({ url }: PDFViewerProps) => {
           onGenerateQuiz={handleGenerateQuiz}
         />
       )}
+
+      <QuizModal
+        isOpen={isQuizModalOpen}
+        onClose={() => setIsQuizModalOpen(false)}
+        questions={quizQuestions}
+      />
     </div>
   );
 };
