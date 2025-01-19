@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Minus,
   Plus,
@@ -16,6 +17,13 @@ import {
   TooltipTrigger
 } from "@/components/ui/tooltip";
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -29,24 +37,14 @@ interface PDFControlsProps {
   onPageChange: (page: number) => void;
   onZoomIn: () => void;
   onZoomOut: () => void;
-  onTranslate: (language: string) => void;
-  onExplain: (style: string) => void;
+  onTranslate: (language: string, instructions?: string) => void;
+  onExplain: (style: string, instructions?: string) => void;
   onGenerateQuiz: () => void;
 }
 
 const LANGUAGES = [
-  'English',
-  'Spanish',
-  'French',
-  'German',
-  'Italian',
-  'Portuguese',
-  'Chinese',
-  'Japanese',
-  'Korean',
-  'Russian',
-  'Arabic',
-  'Hindi'
+  'English', 'Spanish', 'French', 'German', 'Italian', 'Portuguese',
+  'Chinese', 'Japanese', 'Korean', 'Russian', 'Arabic', 'Hindi'
 ];
 
 const EXPLANATION_STYLES = [
@@ -66,6 +64,9 @@ const PDFControls = ({
   onExplain,
   onGenerateQuiz
 }: PDFControlsProps) => {
+  const [translationInstructions, setTranslationInstructions] = useState('');
+  const [explanationInstructions, setExplanationInstructions] = useState('');
+
   const handlePageInput = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = parseInt(e.target.value);
     if (!isNaN(value) && value >= 1 && value <= numPages) {
@@ -109,49 +110,105 @@ const PDFControls = ({
         </div>
 
         <div className="flex items-center gap-2">
-          <DropdownMenu>
+          <Dialog>
             <Tooltip>
               <TooltipTrigger asChild>
-                <DropdownMenuTrigger asChild>
+                <DialogTrigger asChild>
                   <Button variant="outline" size="icon">
                     <Languages className="h-4 w-4" />
                   </Button>
-                </DropdownMenuTrigger>
+                </DialogTrigger>
               </TooltipTrigger>
               <TooltipContent>
                 <p>Translate this page</p>
               </TooltipContent>
             </Tooltip>
-            <DropdownMenuContent align="end">
-              {LANGUAGES.map((lang) => (
-                <DropdownMenuItem key={lang} onClick={() => onTranslate(lang)}>
-                  {lang}
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Translation Settings</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4 py-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Target Language</label>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="outline" className="w-full justify-start">
+                        Select Language
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-[200px]">
+                      {LANGUAGES.map((lang) => (
+                        <DropdownMenuItem 
+                          key={lang} 
+                          onClick={() => onTranslate(lang, translationInstructions)}
+                        >
+                          {lang}
+                        </DropdownMenuItem>
+                      ))}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Special Instructions</label>
+                  <Textarea
+                    placeholder="Enter any specific translation requirements..."
+                    value={translationInstructions}
+                    onChange={(e) => setTranslationInstructions(e.target.value)}
+                  />
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
 
-          <DropdownMenu>
+          <Dialog>
             <Tooltip>
               <TooltipTrigger asChild>
-                <DropdownMenuTrigger asChild>
+                <DialogTrigger asChild>
                   <Button variant="outline" size="icon">
                     <MessageSquareText className="h-4 w-4" />
                   </Button>
-                </DropdownMenuTrigger>
+                </DialogTrigger>
               </TooltipTrigger>
               <TooltipContent>
                 <p>Get an explanation</p>
               </TooltipContent>
             </Tooltip>
-            <DropdownMenuContent align="end">
-              {EXPLANATION_STYLES.map((style) => (
-                <DropdownMenuItem key={style.value} onClick={() => onExplain(style.value)}>
-                  {style.label}
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Explanation Settings</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4 py-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Explanation Style</label>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="outline" className="w-full justify-start">
+                        Select Style
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-[200px]">
+                      {EXPLANATION_STYLES.map((style) => (
+                        <DropdownMenuItem 
+                          key={style.value} 
+                          onClick={() => onExplain(style.value, explanationInstructions)}
+                        >
+                          {style.label}
+                        </DropdownMenuItem>
+                      ))}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Special Instructions</label>
+                  <Textarea
+                    placeholder="Enter any specific explanation requirements..."
+                    value={explanationInstructions}
+                    onChange={(e) => setExplanationInstructions(e.target.value)}
+                  />
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
 
           <Tooltip>
             <TooltipTrigger asChild>

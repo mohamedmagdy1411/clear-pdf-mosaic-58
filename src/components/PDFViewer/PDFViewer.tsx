@@ -17,6 +17,7 @@ interface Question {
   question: string;
   options: string[];
   correctIndex: number;
+  explanation?: string;
 }
 
 const PDFViewer = ({ url }: PDFViewerProps) => {
@@ -65,7 +66,11 @@ const PDFViewer = ({ url }: PDFViewerProps) => {
     }
   };
 
-  const handleGeminiAction = async (action: 'translate' | 'explain' | 'quiz', options?: { language?: string, style?: string }) => {
+  const handleGeminiAction = async (action: 'translate' | 'explain' | 'quiz', options?: { 
+    language?: string, 
+    style?: string,
+    instructions?: string 
+  }) => {
     try {
       const pageText = await getPageText(currentPage);
       
@@ -105,7 +110,9 @@ const PDFViewer = ({ url }: PDFViewerProps) => {
         }
       } else {
         toast({
-          title: action === 'translate' ? `Translation (${options?.language})` : `Explanation (${options?.style})`,
+          title: action === 'translate' 
+            ? `Translation (${options?.language})` 
+            : `Explanation (${options?.style})`,
           description: data.result,
           duration: 10000,
         });
@@ -120,8 +127,12 @@ const PDFViewer = ({ url }: PDFViewerProps) => {
     }
   };
 
-  const handleTranslate = (language: string) => handleGeminiAction('translate', { language });
-  const handleExplain = (style: string) => handleGeminiAction('explain', { style });
+  const handleTranslate = (language: string, instructions?: string) => 
+    handleGeminiAction('translate', { language, instructions });
+    
+  const handleExplain = (style: string, instructions?: string) => 
+    handleGeminiAction('explain', { style, instructions });
+    
   const handleGenerateQuiz = () => handleGeminiAction('quiz');
 
   const handlePageChange = (newPage: number) => {

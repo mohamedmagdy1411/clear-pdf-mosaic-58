@@ -8,11 +8,14 @@ import {
 import { Button } from "@/components/ui/button";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { CheckCircle2, XCircle } from "lucide-react";
 
 interface Question {
   question: string;
   options: string[];
   correctIndex: number;
+  explanation?: string;
 }
 
 interface QuizModalProps {
@@ -26,8 +29,9 @@ const QuizModal = ({ isOpen, onClose, questions = [] }: QuizModalProps) => {
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
   const [showResult, setShowResult] = useState(false);
   const [score, setScore] = useState(0);
+  const [showFeedback, setShowFeedback] = useState(false);
+  const [answers, setAnswers] = useState<boolean[]>([]);
 
-  // If there are no questions, show a message
   if (!questions.length) {
     return (
       <Dialog open={isOpen} onOpenChange={onClose}>
@@ -46,17 +50,23 @@ const QuizModal = ({ isOpen, onClose, questions = [] }: QuizModalProps) => {
 
   const handleAnswerSelect = (index: number) => {
     setSelectedAnswer(index);
+    setShowFeedback(true);
+    
+    const isCorrect = index === questions[currentQuestion]?.correctIndex;
+    const newAnswers = [...answers];
+    newAnswers[currentQuestion] = isCorrect;
+    setAnswers(newAnswers);
   };
 
   const handleNext = () => {
-    if (selectedAnswer === questions[currentQuestion].correctIndex) {
+    if (selectedAnswer === questions[currentQuestion]?.correctIndex) {
       setScore(score + 1);
     }
     
     if (currentQuestion < questions.length - 1) {
       setCurrentQuestion(currentQuestion + 1);
       setSelectedAnswer(null);
-      setShowResult(false);
+      setShowFeedback(false);
     } else {
       setShowResult(true);
     }
@@ -67,6 +77,8 @@ const QuizModal = ({ isOpen, onClose, questions = [] }: QuizModalProps) => {
     setSelectedAnswer(null);
     setShowResult(false);
     setScore(0);
+    setShowFeedback(false);
+    setAnswers([]);
   };
 
   return (
@@ -96,6 +108,29 @@ const QuizModal = ({ isOpen, onClose, questions = [] }: QuizModalProps) => {
                 </div>
               ))}
             </RadioGroup>
+
+            {showFeedback && selectedAnswer !== null && (
+              <Alert variant={answers[currentQuestion] ? "default" : "destructive"}>
+                <div className="flex items-center gap-2">
+                  {answers[currentQuestion] ? (
+                    <CheckCircle2 className="h-4 w-4 text-green-500" />
+                  ) : (
+                    <XCircle className="h-4 w-4 text-red-500" />
+                  )}
+                  <AlertDescription>
+                    {answers[currentQuestion] 
+                      ? "Correct!" 
+                      : `Incorrect. The correct answer is: ${questions[currentQuestion]?.options[questions[currentQuestion]?.correctIndex]}`
+                    }
+                    {questions[currentQuestion]?.explanation && (
+                      <p className="mt-2 text-sm text-muted-foreground">
+                        {questions[currentQuestion].explanation}
+                      </p>
+                    )}
+                  </AlertDescription>
+                </div>
+              </Alert>
+            )}
 
             <Button
               onClick={handleNext}
