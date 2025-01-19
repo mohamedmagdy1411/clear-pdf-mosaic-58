@@ -14,26 +14,39 @@ async function generateGeminiResponse(text: string, action: string, options?: { 
   switch (action) {
     case 'translate':
       const targetLanguage = options?.language || 'English'
-      prompt = `Translate the following text to ${targetLanguage}: "${text}"`
+      prompt = `Translate the following text to ${targetLanguage}:\n\n${text}`
       break
     case 'explain':
       const style = options?.style || 'simple'
       let stylePrompt = ''
       switch (style) {
         case 'technical':
-          stylePrompt = 'using technical terminology'
+          stylePrompt = 'using technical terminology and detailed explanations'
           break
         case 'academic':
-          stylePrompt = 'in an academic style'
+          stylePrompt = 'in an academic style with formal language and citations where relevant'
           break
         case 'simple':
         default:
-          stylePrompt = 'in simple terms'
+          stylePrompt = 'in simple terms that anyone can understand'
       }
-      prompt = `Explain the following text ${stylePrompt}: "${text}"`
+      prompt = `Explain the following text ${stylePrompt}:\n\n${text}`
       break
     case 'quiz':
-      prompt = `Generate 3 multiple choice questions based on this text: "${text}". Format your response as a valid JSON array with this exact structure: [{"question": "question text", "options": ["option1", "option2", "option3", "option4"], "correctIndex": 0}]. Make sure the JSON is properly formatted and each question has exactly 4 options.`
+      prompt = `Create 3 multiple choice questions based on this text. Format your response as a JSON array with exactly this structure, no additional text or explanation:
+[
+  {
+    "question": "Question text here?",
+    "options": ["Option 1", "Option 2", "Option 3", "Option 4"],
+    "correctIndex": 0
+  }
+]
+Make sure:
+- Generate exactly 3 questions
+- Each question has exactly 4 options
+- correctIndex is a number (0-3) indicating the correct option
+- The response is valid JSON
+Here's the text:\n\n${text}`
       break
     default:
       throw new Error('Invalid action')
@@ -65,18 +78,41 @@ async function generateGeminiResponse(text: string, action: string, options?: { 
 
     if (action === 'quiz') {
       try {
-        // Validate quiz format
-        const parsed = JSON.parse(result)
-        if (!Array.isArray(parsed)) throw new Error('Quiz response is not an array')
-        parsed.forEach((q: any) => {
-          if (!q.question || !Array.isArray(q.options) || q.options.length !== 4 || typeof q.correctIndex !== 'number') {
-            throw new Error('Invalid quiz question format')
+        // Clean the response to ensure it's valid JSON
+        const cleanedResult = result.trim()
+          .replace(/```json/g, '')
+          .replace(/```/g, '')
+          .trim()
+        
+        // Parse and validate the quiz format
+        const parsed = JSON.parse(cleanedResult)
+        
+        if (!Array.isArray(parsed)) {
+          console.error('Quiz response is not an array:', parsed)
+          throw new Error('Quiz response is not an array')
+        }
+        
+        if (parsed.length !== 3) {
+          console.error('Quiz response does not contain exactly 3 questions:', parsed)
+          throw new Error('Quiz must contain exactly 3 questions')
+        }
+        
+        parsed.forEach((q, index) => {
+          if (!q.question || typeof q.question !== 'string') {
+            throw new Error(`Invalid question format in question ${index + 1}`)
+          }
+          if (!Array.isArray(q.options) || q.options.length !== 4) {
+            throw new Error(`Question ${index + 1} must have exactly 4 options`)
+          }
+          if (typeof q.correctIndex !== 'number' || q.correctIndex < 0 || q.correctIndex > 3) {
+            throw new Error(`Invalid correctIndex in question ${index + 1}`)
           }
         })
-        return result
+        
+        return JSON.stringify(parsed)
       } catch (e) {
-        console.error('Quiz parsing error:', e)
-        throw new Error('Failed to parse quiz response')
+        console.error('Quiz parsing error:', e, '\nRaw response:', result)
+        throw new Error('Failed to parse quiz response: ' + e.message)
       }
     }
 
@@ -88,6 +124,7 @@ async function generateGeminiResponse(text: string, action: string, options?: { 
 }
 
 serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders })
   }
