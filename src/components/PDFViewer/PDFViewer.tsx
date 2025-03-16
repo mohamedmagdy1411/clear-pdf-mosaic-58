@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Document, Page, pdfjs } from 'react-pdf';
 import { useToast } from "@/hooks/use-toast";
@@ -91,11 +90,8 @@ const PDFViewer = ({ url }: PDFViewerProps) => {
         textLength: pageText.length 
       });
       
-      // Log the supabase client config
-      console.log('Supabase client config:', {
-        url: supabase.storageUrl, // This should give us some idea about the base URL
-        functionUrl: supabase.functions.url, // Let's see what the function URL base is
-      });
+      // Log the supabase client config (only public information)
+      console.log('About to call Supabase function...');
       
       // Create the payload and log it
       const payload = { text: pageText, action, options };

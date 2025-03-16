@@ -14,5 +14,5 @@ console.log("Initializing Supabase client with URL:", SUPABASE_URL);
 
 export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
 
-// Log the functions URL to debug the issue
-console.log("Supabase functions URL base:", supabase.functions.url);
+// Log debug information for the functions endpoint
+console.log("Supabase project ID:", SUPABASE_URL.split('//')[1].split('.')[0]);
