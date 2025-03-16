@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Document, Page, pdfjs } from 'react-pdf';
 import { useToast } from "@/hooks/use-toast";
@@ -83,20 +84,43 @@ const PDFViewer = ({ url }: PDFViewerProps) => {
         return;
       }
 
-      console.log('Calling Supabase function with:', { action, options, textLength: pageText.length });
+      // Log detailed information about what we're about to send
+      console.log('Preparing to call Supabase function "gemini-ai" with:', { 
+        action, 
+        options, 
+        textLength: pageText.length 
+      });
       
+      // Log the supabase client config
+      console.log('Supabase client config:', {
+        url: supabase.storageUrl, // This should give us some idea about the base URL
+        functionUrl: supabase.functions.url, // Let's see what the function URL base is
+      });
+      
+      // Create the payload and log it
+      const payload = { text: pageText, action, options };
+      console.log('Payload to be sent:', payload);
+      console.log('Stringified payload:', JSON.stringify(payload));
+      
+      // Make the function call
+      console.log('Invoking function...');
       const { data, error } = await supabase.functions.invoke('gemini-ai', {
-        body: JSON.stringify({ 
-          text: pageText,
-          action,
-          options
-        })
+        body: JSON.stringify(payload)
       });
 
+      // Log the response or error
       if (error) {
         console.error('Supabase function error:', error);
+        console.error('Error details:', {
+          message: error.message,
+          name: error.name,
+          stack: error.stack,
+          cause: error.cause,
+        });
         throw error;
       }
+
+      console.log('Supabase function response:', data);
 
       if (action === 'quiz') {
         try {
